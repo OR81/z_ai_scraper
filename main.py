@@ -12,6 +12,7 @@ import uuid
 import threading
 import hashlib
 import os
+import re
 import logging
 from datetime import datetime, timedelta
 
@@ -49,34 +50,30 @@ def write_log(entry: dict):
             f.write(line + "\n")
 
 
-def create_chrome_driver(headless: bool = True):
+def create_chrome_driver(headless=True):
     options = Options()
+
     if headless:
-        #options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
 
-        # options.add_argument("--disable-gpu")
-        options.add_argument("--use-gl=swiftshader")
-        options.add_argument("--disable-software-rasterizer")
+        options.add_argument("--disable-background-timer-throttling")
+        options.add_argument("--disable-backgrounding-occluded-windows")
+        options.add_argument("--disable-renderer-backgrounding")
 
-        options.add_argument("--disable-gpu-compositing")
-        options.add_argument("--disable-accelerated-2d-canvas")
-        options.add_argument("--disable-accelerated-video-decode")
-
+    options.add_argument("--window-size=1280,1024")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-plugins")
-    options.add_argument("--window-size=1280,1024")
-    
 
-    options.add_experimental_option("excludeSwitches", ["enable-logging", "enable-automation"])
+    options.add_experimental_option(
+        "excludeSwitches", ["enable-logging", "enable-automation"]
+    )
     options.add_experimental_option("useAutomationExtension", False)
 
-    driver_instance = webdriver.Chrome(
-        service=Service('chromedriver.exe'),
+    return webdriver.Chrome(
+        service=Service("chromedriver.exe"),
         options=options
     )
-    return driver_instance
+
 
 
 def apply_cookies(driver, file_path="cookies.json"):
@@ -192,7 +189,159 @@ def send_prompt_text(chat_box, text):
         if i < len(lines) - 1:
             chat_box.send_keys(Keys.SHIFT, Keys.ENTER)
             
-    chat_box.send_keys(Keys.ENTER)        
+    chat_box.send_keys(Keys.ENTER)
+
+
+def parse_cookie_table(cookie_str):
+    cookies = []
+    lines = cookie_str.strip().split("\n")
+
+    for line in lines:
+        parts = line.split("\t")
+        if len(parts) < 7:
+            continue
+        name = parts[0]
+        value = parts[1]
+        domain = parts[2]
+        path = parts[3]
+        expires = parts[4]
+
+        try:
+            expiry_ts = int(datetime.strptime(expires, "%Y-%m-%dT%H:%M:%S.%fZ").timestamp())
+        except:
+            expiry_ts = None
+
+        cookies.append({
+            "name": name,
+            "value": value,
+            "domain": domain,
+            "path": path,
+            "expiry": expiry_ts,
+            "secure": parts[6].strip() == "✓",
+            "httpOnly": False,
+            "sameSite": parts[9].strip() if len(parts) > 9 and parts[9].strip() else "Lax",
+        })
+
+    return cookies
+
+def parse_local_storage(text):
+    local = {}
+
+    if not text:
+        return local
+
+    lines = text.strip().split("\n")
+
+    for line in lines:
+        if "\t" not in line:
+            continue
+
+        key, value = line.split("\t", 1)
+        value = value.strip()
+
+        try:
+            value = json.loads(value)
+        except:
+            if value.lower() == "true":
+                value = True
+            elif value.lower() == "false":
+                value = False
+            elif value.isdigit():
+                value = int(value)
+
+        local[key.strip()] = value
+
+    return local
+
+
+def parse_session_storage(text):
+    session = {}
+
+    if not text:
+        return session
+
+    lines = text.strip().split("\n")
+
+    for line in lines:
+        if "\t" not in line:
+            continue
+
+        key, value = line.split("\t", 1)
+        value = value.strip()
+
+        try:
+            value = json.loads(value)
+        except:
+            if value.lower() == "true":
+                value = True
+            elif value.lower() == "false":
+                value = False
+            elif value.isdigit():
+                value = int(value)
+
+        session[key.strip()] = value
+
+    return session
+
+def extract_section(text, section_name):
+    """
+    Extracts a section from raw text like:
+    cookies:
+    ....
+    session:
+    ....
+    local:
+    ....
+    """
+    pattern = rf"{section_name}\s*:\s*(.*?)(?=\n\w+\s*:|$)"
+    match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else ""
+
+
+@app.route('/update_storage', methods=['POST'])
+def update_storage():
+
+    text = request.get_data(as_text=True)
+
+    if not text:
+        return jsonify({"error": "cookies text required"}), 400
+
+    cookies_text = extract_section(text, "cookies")
+    session_text = extract_section(text, "session")
+    local_text = extract_section(text, "local")
+
+    parsed_cookies = parse_cookie_table(cookies_text)
+    parsed_session = parse_session_storage(session_text)
+    parsed_local = parse_local_storage(local_text)
+
+    try:
+        # update cookies
+        with open("cookies.json", "w", encoding="utf-8") as f:
+            json.dump(parsed_cookies, f, indent=4, ensure_ascii=False)
+
+        # update local
+        with open("local.json", "w", encoding="utf-8") as f:
+            json.dump(parsed_local, f, indent=4, ensure_ascii=False)
+
+        # update session
+        with open("session.json", "w", encoding="utf-8") as f:
+            json.dump(parsed_session, f, indent=4, ensure_ascii=False)
+
+        # log
+        write_log({
+            "action": "update_cookies",
+            "status": "success",
+            "cookies": len(parsed_cookies),
+            "session": bool(parsed_session),
+            "local": bool(parsed_local),
+        })
+
+        return jsonify({"status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 
 @app.route('/login_with_cookies', methods=['POST'])
@@ -206,7 +355,7 @@ def login_with_cookies():
     session_id = uuid.uuid4().hex
 
     try:
-        driver = create_chrome_driver(headless=False)
+        driver = create_chrome_driver(headless=True)
         drivers[session_id] = driver
 
         driver.get("https://chat.z.ai/")
@@ -449,5 +598,5 @@ if __name__ == "__main__":
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
     app.run(host="127.0.0.1", port=5050, debug=False, use_reloader=False)
-    logging.info("Server is running. You can send requests now...")
+
 

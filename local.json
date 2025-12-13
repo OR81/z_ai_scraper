@@ -1,42 +1,24 @@
-[
-    {
-        "name": "BF_CODING_PLAN_2025",
-        "value": "1"
+{
+    "__00b204e9800998__": "1736314395a19b16d8cf7f||1781166866307",
+    "_arms_session": "7e596b5c73c54371898354b1a6f0ae75-1-1765614866180-1765614892750",
+    "_arms_uid": "uid_v21rotc6lfz2qvvh",
+    "_gcl_ls": {
+        "schema": "gcl",
+        "version": 1,
+        "gcl_ctr": {
+            "value": {
+                "value": 0,
+                "timeouts": 0,
+                "creationTimeMs": 1765614866622
+            },
+            "expires": 1773390866622
+        }
     },
-    {
-        "name": "BF_CODING_PLAN_2025_TIMESTAMP",
-        "value": "1764319706612"
-    },
-    {
-        "name": "__00b204e9800998__",
-        "value": "3420560616a19ac9a5d71a||1779871680284"
-    },
-    {
-        "name": "_arms_session",
-        "value": "5b6c399b48c64f2fb3683a58193a81a6-1-1764319679240-1764319715485"
-    },
-    {
-        "name": "_arms_uid",
-        "value": "uid_r1c3pn347u0ju1ha"
-    },
-    {
-        "name": "_gcl_ls",
-        "value": "{\"schema\":\"gcl\",\"version\":1,\"gcl_ctr\":{\"value\":{\"value\":0,\"timeouts\":0,\"creationTimeMs\":1764319679354},\"expires\":1772095679354}}"
-    },
-    {
-        "name": "locale",
-        "value": "en-US"
-    },
-    {
-        "name": "sidebar",
-        "value": "false"
-    },
-    {
-        "name": "theme",
-        "value": "light"
-    },
-    {
-        "name": "token",
-        "value": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImUzODIzNGE0LWRhOWMtNDY3NS1iZDU0LTI2YmVhNWU4ZDBmMCIsImVtYWlsIjoiYW1pcmtob3NyYXZpeWFuODRAZ21haWwuY29tIn0.d-toKQDLI-OKuYjhQruyVQ_EqSr1Rnj6aZWB9IT-JXpsiCl9ldLlOrM_djwny5XPEZrY5f_yjiOBlPib3mYR0w"
-    }
-]
+    "lastCancelTime": 1765614885237,
+    "locale": "en-US",
+    "modelRecommendTime": 1,
+    "shouldSuggestModel": 1,
+    "sidebar": false,
+    "theme": "light",
+    "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQyMTg3ZWNiLWZiZjYtNDE3OS1iNjRlLTFhNmJkYWY0MWI2MyIsImVtYWlsIjoiYW1pcmtob3NyYXZpeWFuMjAwNUBnbWFpbC5jb20ifQ.g78iabkZ5K89nP0ybvqcVdGt_AdSqjwbxX1DMQBDhxmkCIu0GYkYXmVLw2hgQepQV8vOP92q7UTr0T7TuJY2dw"
+}
