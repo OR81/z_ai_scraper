@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
+import platform
 import json
 import time
 import uuid
@@ -49,6 +50,24 @@ def write_log(entry: dict):
         with open(LOG_FILE, "a", encoding="utf-8") as f:
             f.write(line + "\n")
 
+def get_chrome_driver():
+    os_name =platform.system().lower()
+
+    if "windows" in os_name:
+        return "chromedriver.exe"
+
+    elif "linux" in os_name:
+        pathes =[
+            "/usr/local/bin/chromedriver",
+            "/usr/bin/chromedriver"
+            "chromedriver"
+        ]
+        for path in pathes:
+            return path
+        raise FileNotFoundError("ChromeDriver not found on Linux")
+    else:
+        raise OSError(f"Unsupported OS: {os_name}")
+
 
 def create_chrome_driver(headless=True):
     options = Options()
@@ -70,7 +89,7 @@ def create_chrome_driver(headless=True):
     options.add_experimental_option("useAutomationExtension", False)
 
     return webdriver.Chrome(
-        service=Service("chromedriver.exe"),
+        service=Service(get_chrome_driver()),
         options=options
     )
 
